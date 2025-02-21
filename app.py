@@ -4,94 +4,115 @@ import os
 from io import BytesIO
 
 # This must be the first Streamlit command
-st.set_page_config(page_title="💽 Data sweeper", layout='wide')
+st.set_page_config(page_title="💽 Data Sweeper", layout='wide')
 
 # Custom styling after set_page_config
 st.markdown("""
 <style>
-    /* Responsive container */
+    /* Base styles */
+    :root {
+        --dark-blue: #1E3D59;
+        --light-blue: #4A90E2;
+    }
+
+    /* Main container */
     .main {
+        background: transparent;
         padding: 15px;
         max-width: 100%;
     }
 
-    /* Responsive card sections */
-    .stDataFrame, div[data-testid="stFileUploader"] {
-        background: white;
-        padding: clamp(10px, 3vw, 20px);  /* Responsive padding */
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin: 10px 0;
-        width: 100%;
-        overflow-x: auto;  /* Horizontal scroll for tables on mobile */
+    /* Remove all white backgrounds */
+    .stDataFrame, div[data-testid="stFileUploader"], .stCheckbox, .stRadio, 
+    .stButton > button, .stMarkdown, .stSelectbox, .stMultiSelect {
+        background: transparent !important;
     }
 
-    /* Responsive file uploader */
-    [data-testid="stFileUploader"] {
-        border: 2px dashed #4A90E2;
-        background: #F8FAFC;
-        min-width: 200px;
+    /* Default text styling for large screens */
+    body, .stMarkdown, .stDataFrame, div[data-testid="stFileUploader"],
+    .stCheckbox, .stRadio, .stSelectbox, .stMultiSelect, p, span {
+        color: var(--dark-blue) !important;
     }
 
-    /* Responsive buttons */
+    /* Button styling */
     .stButton > button {
-        background: #4A90E2;
-        color: white !important;
+        border: 2px solid var(--light-blue);
         border-radius: 8px;
         padding: clamp(0.4rem, 2vw, 0.8rem) clamp(0.8rem, 4vw, 1.5rem);
-        border: none;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        transition: all 0.2s ease;
-        width: 100%;  /* Full width on mobile */
-        font-size: clamp(14px, 2vw, 16px);  /* Responsive font size */
+        transition: all 0.3s ease;
+        font-size: clamp(16px, 3vw, 18px) !important;
+        font-weight: 500 !important;
+    }
+    .stButton > button:hover {
+        background: var(--light-blue) !important;
+        color: white !important;
+        transform: translateY(-2px);
     }
 
-    /* Responsive checkbox and radio */
-    .stCheckbox, .stRadio {
-        background: white;
-        padding: clamp(10px, 2vw, 15px);
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        width: 100%;
+    /* Headers styling */
+    .stSubheader, h1, h2, h3 {
+        color: var(--dark-blue) !important;
+        font-size: clamp(18px, 4vw, 24px) !important;
+        font-weight: 600 !important;
+        margin: 15px 0 !important;
     }
 
-    /* Responsive messages */
-    .stSuccess, .stError {
-        padding: clamp(10px, 3vw, 20px);
-        border-radius: 8px;
-        width: 100%;
-        font-size: clamp(14px, 2vw, 16px);
-    }
-
-    /* Responsive DataFrame */
+    /* DataFrame styling */
     .dataframe {
         border: none !important;
         width: 100%;
-        font-size: clamp(12px, 1.5vw, 14px);  /* Responsive font size */
+        font-size: clamp(12px, 1.5vw, 14px);
     }
     .dataframe thead th {
-        background-color: #4A90E2 !important;
-        color: white !important;
+        color: var(--dark-blue) !important;
         padding: clamp(5px, 2vw, 10px) !important;
-        white-space: nowrap;  /* Prevent header text wrapping */
     }
 
-    /* Responsive section headers */
-    .stSubheader {
-        font-size: clamp(1rem, 2.5vw, 1.2rem);
-        padding: clamp(0.5rem, 2vw, 1rem) 0;
+    /* File uploader */
+    [data-testid="stFileUploader"] {
+        border: 2px dashed var(--light-blue);
+        min-width: 200px;
     }
 
-    /* Responsive download button */
+    /* Download button */
     [data-testid="stDownloadButton"] button {
+        border: 2px solid var(--light-blue);
         width: 100%;
-        max-width: 400px;  /* Maximum width on larger screens */
+        max-width: 400px;
         margin: 0 auto;
     }
 
-    /* Media queries for different screen sizes */
+    /* Mobile styles */
     @media screen and (max-width: 768px) {
-        /* Adjustments for tablets */
+        /* Change all text to white on mobile */
+        body, .stMarkdown, .stDataFrame, div[data-testid="stFileUploader"],
+        .stCheckbox, .stRadio, .stSelectbox, .stMultiSelect,
+        .stSubheader, h1, h2, h3, p, span, label, 
+        .dataframe thead th, .dataframe tbody td {
+            color: white !important;
+        }
+
+        /* Button styling for mobile */
+        .stButton > button {
+            color: white !important;
+            border-color: white;
+        }
+        .stButton > button:hover {
+            background: white !important;
+            color: var(--light-blue) !important;
+        }
+
+        /* File uploader border for mobile */
+        [data-testid="stFileUploader"] {
+            border-color: white;
+        }
+
+        /* Dark overlay background for better white text readability */
+        .main {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7));
+        }
+
+        /* Columns adjustment */
         .stColumns {
             flex-direction: column;
         }
@@ -101,72 +122,16 @@ st.markdown("""
         }
     }
 
+    /* Extra small screens */
     @media screen and (max-width: 480px) {
-        /* Adjustments for mobile */
         .dataframe {
-            font-size: 12px;
+            font-size: clamp(12px, 2vw, 14px);
         }
         .stButton > button {
             padding: 0.4rem 0.8rem;
         }
         .stMarkdown {
-            font-size: 14px;
-        }
-    }
-
-    /* Ensure text readability on all screens */
-    * {
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-    }
-
-    /* Smooth scrolling for better mobile experience */
-    html {
-        scroll-behavior: smooth;
-    }
-
-    /* Better touch targets for mobile */
-    button, input[type="checkbox"], input[type="radio"] {
-        min-height: 44px;  /* Minimum touch target size */
-    }
-
-    /* Improved heading visibility for mobile */
-    .stSubheader, h2, h3 {
-        color: #4A90E2 !important;  /* Blue color */
-        font-size: clamp(18px, 4vw, 24px) !important;  /* Responsive font size */
-        font-weight: 600 !important;
-        margin: 15px 0 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);  /* Subtle shadow for better readability */
-    }
-
-    /* Improved button text visibility */
-    .stButton > button {
-        font-size: clamp(16px, 3vw, 18px) !important;  /* Larger, responsive font */
-        font-weight: 500 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);  /* Text shadow for better contrast */
-    }
-
-    /* Mobile-specific adjustments */
-    @media screen and (max-width: 768px) {
-        /* Enhanced heading visibility */
-        .stSubheader, h2, h3 {
-            padding: 10px 0 !important;
-            background: rgba(74, 144, 226, 0.1);  /* Light blue background */
-            border-radius: 5px;
-            padding-left: 10px !important;
-        }
-
-        /* Enhanced button visibility */
-        .stButton > button {
-            padding: 12px 20px !important;
-            letter-spacing: 0.5px;
-        }
-
-        /* Improved checkbox and radio labels */
-        .stCheckbox label, .stRadio label {
-            color: #4A90E2 !important;
-            font-size: 16px !important;
-            font-weight: 500 !important;
+            font-size: clamp(14px, 2vw, 16px);
         }
     }
 </style>
@@ -175,8 +140,7 @@ st.markdown("""
 st.title("💽 Data Sweeper")
 st.write("Transform your files between CSV and Excel formats with built-in data cleaning and visualization! ✨")
 
-uploaded_files = st.file_uploader("Upload your files (CSV or Excel):", type=["csv", "xlsx"],
-accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload your files (CSV or Excel):", type=["csv", "xlsx"], accept_multiple_files=True)
 
 if uploaded_files:
     for file in uploaded_files:
